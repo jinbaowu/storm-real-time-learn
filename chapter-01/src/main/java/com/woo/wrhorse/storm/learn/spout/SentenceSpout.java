@@ -58,10 +58,14 @@ public class SentenceSpout extends BaseRichSpout {
      */
     @Override
     public void nextTuple() {
-        this.collector.emit(new Values(sentences[index]));
-        index++;
-        if (index >= sentences.length) {
-            index = 0;
+//        this.collector.emit(new Values(sentences[index]));
+//        index++;
+//        if (index >= sentences.length) {
+//            index = 0;
+//        }
+        if(index < sentences.length) {
+            this.collector.emit(new Values(sentences[index]));
+            index++;
         }
         Utils.waitForMillis(1);
     }

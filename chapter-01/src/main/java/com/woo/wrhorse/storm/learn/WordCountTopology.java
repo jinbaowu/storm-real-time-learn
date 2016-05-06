@@ -51,6 +51,7 @@ public class WordCountTopology {
          * 4 表示4个executor，每个执行一个task
          */
         builder.setBolt(COUNT_BOLD_ID,countBolt, 4).fieldsGrouping(SPLIT_BOLD_ID, new Fields("word"));
+//        builder.setBolt(COUNT_BOLD_ID,countBolt, 4).shuffleGrouping(SPLIT_BOLD_ID);
 
         /**
          * BoltDeclarer的globalGrouping()方法保证所有的tuple路由到唯一的ReportBolt任务中。
