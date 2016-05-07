@@ -9,12 +9,19 @@ import backtype.storm.tuple.Values;
 import com.woo.wrhorse.storm.learn.utile.Utils;
 
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by jinbao.wu on 2016/5/5.
  */
 public class SentenceSpout extends BaseRichSpout {
 
+    /**
+     * ConcurrentHashMap是线程安全的
+     * UUID号称生成全球唯一的Id
+     */
+    private ConcurrentHashMap<UUID, Values> pending;
     private SpoutOutputCollector collector;
     private String[] sentences = {
             "my dog has fleas",
@@ -49,6 +56,7 @@ public class SentenceSpout extends BaseRichSpout {
     @Override
     public void open(Map map, TopologyContext topologyContext, SpoutOutputCollector collector) {
         this.collector = collector;
+        this.pending = new ConcurrentHashMap<UUID, Values>();
 
     }
 
@@ -58,15 +66,30 @@ public class SentenceSpout extends BaseRichSpout {
      */
     @Override
     public void nextTuple() {
-//        this.collector.emit(new Values(sentences[index]));
-//        index++;
-//        if (index >= sentences.length) {
-//            index = 0;
-//        }
-        if(index < sentences.length) {
-            this.collector.emit(new Values(sentences[index]));
-            index++;
+        Values values = new Values(sentences[index]);
+        UUID msgId = UUID.randomUUID();
+        this.pending.put(msgId, values);
+        this.collector.emit(values, msgId);
+        index++;
+        if (index >= sentences.length) {
+            index = 0;
         }
+//        if(index < sentences.length) {
+//            this.collector.emit(new Values(sentences[index]));
+//            index++;
+//        }
         Utils.waitForMillis(1);
+    }
+
+    /**
+     * ack
+     * @param msgId
+     */
+    public void ack(Object msgId) {
+        this.pending.remove(msgId);
+    }
+
+    public void fail(Object msgId) {
+        this.collector.emit(this.pending.get(msgId), msgId);
     }
 }
